@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#3F51B5</color>
+    <color name="colorPrimaryDark">#303F9F</color>
+    <color name="colorAccent">#FF4081</color>
+    <color name="excelMaroon">#771b48</color>
+    <color name="dark_grey_bg">#232321</color>
+    <color name="android_green">#97c024</color>
+    <color name="very_light_grey">#d7d6d2</color>
+    <color name="ll_pressed_color">#648fc9de</color>
+    <color name="dark_green">#0b7c13</color>
+</resources>
