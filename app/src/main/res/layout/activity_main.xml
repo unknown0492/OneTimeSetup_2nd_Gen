@@ -197,10 +197,27 @@
             <!-- Item Separator -->
             <ImageView style="@style/iv_item_separator" />
             <!--/ Item Separator -->
+
+            <Button
+                android:layout_width="185dp"
+                android:layout_height="60dp"
+                android:text="Verify Settings"
+                android:id="@+id/bt_verify_settings"
+                android:layout_gravity="center_horizontal"
+                android:gravity="center"
+                android:layout_margin="20dp"
+                android:padding="20dp"
+                android:textColor="@color/white"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:background="@drawable/button_verify_settings" />
+
         </LinearLayout>
 
 
 
     </ScrollView>
+
+
 
 </RelativeLayout>

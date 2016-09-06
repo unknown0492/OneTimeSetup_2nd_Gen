@@ -9,4 +9,5 @@
     <color name="very_light_grey">#d7d6d2</color>
     <color name="ll_pressed_color">#648fc9de</color>
     <color name="dark_green">#0b7c13</color>
+    <color name="white">#ffffff</color>
 </resources>
