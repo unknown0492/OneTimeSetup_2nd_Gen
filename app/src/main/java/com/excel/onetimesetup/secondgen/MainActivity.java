@@ -28,6 +28,9 @@ import com.excel.excelclasslibrary.UtilNetwork;
 import com.excel.excelclasslibrary.UtilShell;
 import com.excel.excelclasslibrary.UtilURL;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import java.io.File;
 import java.util.HashMap;
 import java.util.Locale;
@@ -309,9 +312,30 @@ public class MainActivity extends AppCompatActivity {
 
                 Log.d( TAG, s );
 
+                String info = null;
+                try{
+                    JSONArray jsonArray = new JSONArray( s );
+                    JSONObject jsonObject = jsonArray.getJSONObject( 0 );
+                    String type = jsonObject.getString( "type" );
+                    info = jsonObject.getString( "info" );
+
+                    if( type.equals( "error" ) ){
+                        CustomItems.showCustomToast( context, "error", info, 5000 );
+                        return;
+                    }
+
+                }
+                catch ( Exception e ){
+                    e.printStackTrace();
+                    CustomItems.showCustomToast( context, "error", "JSONException Occurred !", 5000 );
+                    return;
+                }
+
+
+
                 // configurationWriter = ConfigurationWriter.getInstance( context );
 
-                if( ! ConfigurationWriter.writeAllConfigurations( s ) ){
+                if( ! ConfigurationWriter.writeAllConfigurations( info ) ){
                     CustomItems.showCustomToast( context, "error", "OTS was not successful. Contact Technical Team !", 5000 );
                     return;
                 }
