@@ -99,9 +99,12 @@ public class MainActivity extends AppCompatActivity {
 
     public void initViews(){
         hideActionBar();
-        initLanguages();
 
         configurationReader = ConfigurationReader.getInstance();
+
+        checkIfOTSAlreadyCompleted();
+        initLanguages();
+
 
         ll_select_language = (LinearLayout) findViewById( R.id.ll_select_language );
         ll_select_country = (LinearLayout) findViewById( R.id.ll_select_country );
@@ -126,6 +129,18 @@ public class MainActivity extends AppCompatActivity {
         tv_cms_ip_value = (TextView) findViewById( R.id.tv_cms_ip_value );
         bt_verify_settings = (Button) findViewById( R.id.bt_verify_settings );
     }
+
+    public void checkIfOTSAlreadyCompleted(){
+        String is_ots_comleted = configurationReader.getIsOtsCompleted();
+        if( is_ots_comleted.equals( "1" ) ){
+            Log.d( TAG, "Exiting OTS, already completed !" );
+            finish();
+        }
+
+
+    }
+
+
 
     public void selectNetworkListener(){
 
@@ -294,7 +309,7 @@ public class MainActivity extends AppCompatActivity {
                                 { "client", "appstv" },
                                 { "api_key", UtilMisc.md5String( mac_address ) },
                         } );
-                // Log.d( TAG, URL + "-----" +url_params );
+                Log.d( TAG, URL + "-----" +url_params );
                 return UtilNetwork.makeRequestForData( URL, "POST", url_params );
             }
 
@@ -332,10 +347,12 @@ public class MainActivity extends AppCompatActivity {
                 }
 
 
-
                 // configurationWriter = ConfigurationWriter.getInstance( context );
+                File appstv_data = new File( ConfigurationWriter.getAppstvDataDirectorypath() );
+                if( ! appstv_data.exists() )
+                    appstv_data.mkdirs();
 
-                if( ! ConfigurationWriter.writeAllConfigurations( info ) ){
+                if( ! ConfigurationWriter.writeAllConfigurations( context, info ) ){
                     CustomItems.showCustomToast( context, "error", "OTS was not successful. Contact Technical Team !", 5000 );
                     return;
                 }

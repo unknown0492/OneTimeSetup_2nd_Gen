@@ -2,9 +2,9 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/ExcelClassLibrary-debug/ExcelClassLibrary-debug.iml" filepath="$PROJECT_DIR$/ExcelClassLibrary-debug/ExcelClassLibrary-debug.iml" />
       <module fileurl="file://$PROJECT_DIR$/OneTimeSetup_2ndGen.iml" filepath="$PROJECT_DIR$/OneTimeSetup_2ndGen.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
-      <module fileurl="file://$PROJECT_DIR$/app-debug/app-debug.iml" filepath="$PROJECT_DIR$/app-debug/app-debug.iml" />
     </modules>
   </component>
 </project>

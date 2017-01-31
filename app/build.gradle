@@ -8,7 +8,8 @@ android {
         minSdkVersion 16
         targetSdkVersion 23
         versionCode 1
-        versionName "1.0"
+        versionName "1.0.0"
+        project.ext.set("archivesBaseName", "0-OneTimeSetup_2ndGen_v" + defaultConfig.versionName);
     }
     buildTypes {
         release {
@@ -24,5 +25,5 @@ dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
     testCompile 'junit:junit:4.12'
     compile 'com.android.support:appcompat-v7:23.4.0'
-    compile project(':app-debug')
+    compile project(':ExcelClassLibrary-debug')
 }
