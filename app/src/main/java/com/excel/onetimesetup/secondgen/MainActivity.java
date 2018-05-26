@@ -1,10 +1,15 @@
 package com.excel.onetimesetup.secondgen;
 
+import android.Manifest;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.pm.PackageManager;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -32,7 +37,9 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
@@ -40,8 +47,8 @@ public class MainActivity extends AppCompatActivity {
     ConfigurationReader configurationReader;
     ConfigurationWriter configurationWriter;
 
-    LinearLayout ll_select_language, ll_select_country, ll_select_timezone, ll_select_city, ll_set_room_no, ll_select_network, ll_set_cms_ip;
-    TextView tv_select_country, tv_select_timezone, tv_select_city, tv_room_no, tv_select_network, tv_cms_ip, tv_select_language;
+    LinearLayout ll_select_language, ll_select_country, ll_select_timezone, ll_select_city, ll_set_room_no, ll_select_network, ll_set_cms_ip, ll_mac_address;
+    TextView tv_select_country, tv_select_timezone, tv_select_city, tv_room_no, tv_select_network, tv_cms_ip, tv_select_language, tv_mac_address;
     TextView tv_country_value, tv_timezone_value, tv_city_value, tv_room_no_value, tv_network_value, tv_cms_ip_value, tv_language_value;
 
     Context context = this;
@@ -52,42 +59,126 @@ public class MainActivity extends AppCompatActivity {
     String[] language_codes;
     HashMap<String,String> language_map;
 
+    String[] permissions = {
+            Manifest.permission.WRITE_EXTERNAL_STORAGE,
+            Manifest.permission.ACCESS_WIFI_STATE,
+            Manifest.permission.ACCESS_NETWORK_STATE,
+            Manifest.permission.READ_EXTERNAL_STORAGE
+    };
+
     @Override
     protected void onCreate( Bundle savedInstanceState ) {
         super.onCreate( savedInstanceState );
         setContentView( R.layout.activity_main );
 
-        init();
+        // Permissions for Android 6.0
+        if ( Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ) {
+            if ( checkPermissions() ) {
+                // permissions  granted.
+                init();
+            }
+        }
+        else
+            init();
+
+
+    }
+
+    @Override
+    public void onRequestPermissionsResult( int requestCode, String permissions[], int[] grantResults ) {
+        switch ( requestCode ) {
+            case 10:
+            {
+                if( grantResults.length > 0 && grantResults[ 0 ] == PackageManager.PERMISSION_GRANTED ){
+                    // permissions granted.
+                    Log.d( TAG, grantResults.length + " Permissions granted : " );
+                } else {
+                    String permission = "";
+                    for ( String per : permissions ) {
+                        permission += "\n" + per;
+                    }
+                    // permissions list of don't granted permission
+                    Log.d( TAG, "Permissions not granted : "+permission );
+                }
+                return;
+            }
+        }
+    }
+
+    public boolean checkPermissions() {
+        int result;
+        List<String> listPermissionsNeeded = new ArrayList<>();
+        for ( String p:permissions ) {
+            result = ContextCompat.checkSelfPermission( this, p );
+            if ( result != PackageManager.PERMISSION_GRANTED ) {
+                listPermissionsNeeded.add( p );
+            }
+        }
+        if ( !listPermissionsNeeded.isEmpty() ) {
+            ActivityCompat.requestPermissions( this, listPermissionsNeeded.toArray( new String[ listPermissionsNeeded.size() ] ), 10 );
+            return false;
+        }
+        return true;
     }
 
     public void init(){
+
         initViews();
 
         // Set Default Values on the Text Views (reading the default values from /system/appstv_data/configuration
         setDefaultValues();
 
-        // Select Network
-        selectNetworkListener();
+        try {
+            // Select Network
+            selectNetworkListener();
+        }
+        catch( Exception e ){
+            e.printStackTrace();
+        }
 
         // Set Room Number Click
         roomNumberClickListener();
 
-        // Set CMS IP
-        setCMSIpListener();
+        try {
+            // Set CMS IP
+            setCMSIpListener();
+
+        }
+        catch( Exception e ){
+            e.printStackTrace();
+        }
+
+        try {
+            // Set Mac Address
+            setMacAddress();
+        }
+        catch( Exception e ){
+            e.printStackTrace();
+        }
 
         // Verify Settings Button
         verifySettings();
+
     }
 
     @Override
     protected void onResume() {
         super.onResume();
 
+        if ( Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ) {
+            if ( checkPermissions() ) {
+                onResumeContent();
+            }
+        }
+    }
+
+    private void onResumeContent(){
         configurationReader = ConfigurationReader.reInstantiate();
 
         // Set Network Selection Value
         setNetworkValue();
     }
+
 
     @Override
     public void onBackPressed() {
@@ -113,6 +204,7 @@ public class MainActivity extends AppCompatActivity {
         ll_set_room_no = (LinearLayout) findViewById( R.id.ll_set_room_no );
         ll_select_network = (LinearLayout) findViewById( R.id.ll_select_network );
         ll_set_cms_ip = (LinearLayout) findViewById( R.id.ll_set_cms_ip );
+        ll_mac_address = (LinearLayout) findViewById( R.id.ll_mac_address );
         tv_select_language = (TextView) findViewById( R.id.tv_select_language );
         tv_select_country = (TextView) findViewById( R.id.tv_select_country );
         tv_select_timezone = (TextView) findViewById( R.id.tv_select_timezone );
@@ -127,6 +219,7 @@ public class MainActivity extends AppCompatActivity {
         tv_room_no_value = (TextView) findViewById( R.id.tv_room_no_value );
         tv_network_value = (TextView) findViewById( R.id.tv_network_value );
         tv_cms_ip_value = (TextView) findViewById( R.id.tv_cms_ip_value );
+        tv_mac_address = (TextView) findViewById( R.id.tv_mac_address );
         bt_verify_settings = (Button) findViewById( R.id.bt_verify_settings );
     }
 
@@ -157,43 +250,106 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void setNetworkValue(){
-        String ip = UtilNetwork.getLocalIpAddressIPv4( context );
-        String interface_name = UtilNetwork.getConnectedNetworkInterfaceName( context );
+        try {
+            String ip = UtilNetwork.getLocalIpAddressIPv4(context);
+            String interface_name = UtilNetwork.getConnectedNetworkInterfaceName(context);
 
-        if( interface_name == null )
-            interface_name = "Network Disconnected : ";
-        else
-            interface_name = interface_name + " Connected : ";
-        if( ip == null )
-            ip = "Invalid IP Address";
-        else
-            ip = "IPv4 address - " + ip;
+            if (interface_name == null)
+                interface_name = "Network Disconnected : ";
+            else
+                interface_name = interface_name + " Connected : ";
+            if (ip == null)
+                ip = "Invalid IP Address";
+            else
+                ip = "IPv4 address - " + ip;
 
-        tv_network_value.setText( interface_name + ip );
+            tv_network_value.setText(interface_name + ip);
+        }
+        catch ( Exception e ){
+            e.printStackTrace();
+        }
     }
 
     public void roomNumberClickListener(){
-
+        final Dialog d = new Dialog( context );
         ll_set_room_no.setOnClickListener(new View.OnClickListener() {
 
             @Override
             public void onClick(View v) {
-                AlertDialog.Builder ab = new AlertDialog.Builder( context );
+
+                /*
+                d.setTitle( "Set Room Number" );
+                LinearLayout lll = new LinearLayout( context );
+                LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+                lp.setMargins( 30, 30, 30, 30 );
+                lll.setLayoutParams( lp );
+                lll.setOrientation( LinearLayout.VERTICAL );
+                TextView tv_msg = new TextView( context );
+                tv_msg.setText( "Note : Type only numbers without the word `ROOM`" );
+                Button pos = new Button( context );
+                pos.setLayoutParams( new ActionBar.LayoutParams(ActionBar.LayoutParams.WRAP_CONTENT,
+                        ActionBar.LayoutParams.WRAP_CONTENT) );
+                //pos.setG
+                pos.setBackgroundResource( R.drawable.button_verify_settings1 );
+                pos.setText( "Set" );
+                pos.setOnClickListener(new View.OnClickListener() {
+
+                    @Override
+                    public void onClick( View v ) {
+                        d.dismiss();
+                    }
+
+                });
+                lll.addView( tv_msg );
+                lll.addView( pos );
+
+
+                Button neg = new Button( context );
+                neg.setWidth( 100 );
+                neg.setBackgroundResource( R.drawable.button_verify_settings1 );
+                neg.setText( "Cancel" );
+                neg.setOnClickListener(new View.OnClickListener() {
+
+                    @Override
+                    public void onClick( View v ) {
+                        d.dismiss();
+                    }
+
+                });
+                lll.addView( neg );
+
+                d.setContentView( lll );
+
+                d.show();
+                */
+
+               AlertDialog.Builder ab = new AlertDialog.Builder( context );
                 ab.setTitle( "Set Room Number" );
                 ab.setMessage( "Note : Type only numbers without the word `ROOM`" );
 
-                final EditText et = new EditText( context );
-                et.setHint( "1013" );
-                et.setInputType( InputType.TYPE_CLASS_NUMBER );
+                final LinearLayout ll_parent1 = new LinearLayout( context );
+                final LinearLayout ll1 = new LinearLayout( context );
+                ll1.setFocusable( true );
+                ll1.setFocusableInTouchMode( true );
+
+                final EditText et1 = new EditText( context );
+                et1.setHint( "1013" );
+
+
+                et1.setInputType( InputType.TYPE_CLASS_NUMBER );
 
                 String room_no = "";
 
-                ab.setView( et );
+                ll_parent1.addView( ll1 );
+                ll_parent1.addView( et1 );
+
+                ab.setView( ll_parent1 );
                 ab.setPositiveButton( "Set", new DialogInterface.OnClickListener() {
 
                     @Override
                     public void onClick( DialogInterface dialog, int which ) {
-                        String room_no = et.getText().toString().trim();
+                        String room_no = et1.getText().toString().trim();
                         if( room_no.equals( "" ) ){
                             CustomItems.showCustomToast( context, "error", "Room Number cannot be empty", 3000 );
                             return;
@@ -222,13 +378,22 @@ public class MainActivity extends AppCompatActivity {
                 ab.setTitle( "Set CMS IP" );
                 ab.setMessage( "Note : Type each character carefully. Enter only IP address without any protocol name and without port number" );
 
+                final LinearLayout ll_parent = new LinearLayout( context );
+                final LinearLayout ll = new LinearLayout( context );
+                ll.setFocusable( true );
+                ll.setFocusableInTouchMode( true );
+
                 final EditText et = new EditText( context );
                 et.setHint( "192.168.1.2" );
 
                 String cms_ip = tv_cms_ip_value.getText().toString();
                 et.setText( cms_ip );
 
-                ab.setView( et );
+                //ll.addView( et );
+                ll_parent.addView( ll );
+                ll_parent.addView( et );
+
+                ab.setView( ll_parent );
                 ab.setPositiveButton( "Set", new DialogInterface.OnClickListener() {
 
                     @Override
@@ -251,6 +416,10 @@ public class MainActivity extends AppCompatActivity {
 
         });
 
+    }
+
+    public void setMacAddress(){
+        tv_mac_address.setText( UtilNetwork.getMacAddress( context ) );
     }
 
     public void verifySettings(){
@@ -364,7 +533,7 @@ public class MainActivity extends AppCompatActivity {
                 setTimeZone( configurationReader.getTimezone() );
 
                 // Set Language
-                setLocaleLanguage( configurationReader.getLanguage() );
+                // setLocaleLanguage( configurationReader.getLanguage() );
 
                 // Install pre-install apps
                 installPreInstallApps();
@@ -431,12 +600,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public String[] getPreinstallAppsPackageNames(){
-        UtilShell.executeShellCommandWithOp( "chmod -R 777 /system/appstv_data/preinstall" );
+        UtilShell.executeShellCommandWithOp( "chmod -R 777 /system/appstv_data/preinstall_apps" );
         String package_names =  UtilFile.readData( new File( "/system/appstv_data/preinstall_apps" ) );
         String p[] = package_names.trim().split( "," );
-        String packages[] = new String[ p.length / 3 ];
+        String packages[] = new String[ p.length / 5 ];
         int i = 0;
-        for( int j = 0 ; j < p.length - 2 ; j = j + 3 ){
+        for( int j = 0 ; j < p.length - 4 ; j = j + 5 ){
             packages[ i++ ] = p[ j ];
         }
         return packages;
@@ -478,7 +647,7 @@ public class MainActivity extends AppCompatActivity {
                 RelativeLayout rl = (RelativeLayout) lf.inflate( R.layout.app_installation_progress, null );
                 message = (TextView) rl.findViewById( R.id.tv_message );
 
-                ab.setTitle( "Installing apps...Do not Interrupt !" );
+                ab.setTitle( "Installing apps...Do not Power Off !" );
                 ab.setContentView( rl );
                 ab.setCancelable( false );
 
@@ -494,7 +663,7 @@ public class MainActivity extends AppCompatActivity {
                     MainActivity.this.runOnUiThread(new Runnable() {
 
                         public void run() {
-                            Log.d( TAG, String.format( "Installing app %s of %s", i+1, package_names.length ) );
+                            Log.d( TAG, String.format( "Installing app %s of %s", package_names[ i ], package_names.length ) );
                             message.setText( String.format( "Installing app %s of %s", i+1, package_names.length ) );
                             //CustomItems.showCustomToast( context, "success", String.format( "Installing app %s of %s", i + 1, package_names.length ), 3000 );
                         }

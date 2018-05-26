@@ -7,7 +7,7 @@
     android:paddingLeft="30dp"
     android:paddingRight="30dp"
     android:paddingTop="30dp"
-    android:background="@drawable/background"
+    android:background="#3c3c3c"
     tools:context="com.excel.onetimesetup.secondgen.MainActivity">
 
     <TextView
@@ -16,7 +16,7 @@
         android:textSize="30sp"
         android:text="Welcome To APPS TV\nOne Time Setup"
         android:gravity="center_horizontal"
-        android:textColor="@color/excelMaroon"
+        android:textColor="#ffffff"
         android:textStyle="bold"
         android:layout_centerHorizontal="true"
         android:id="@+id/textView" />
@@ -147,6 +147,8 @@
                     android:text="Selected Network : IP Address"
                     style="@style/tv_settings_value" />
 
+                <requestFocus />
+
             </LinearLayout>
             <!--/ Select Network -->
 
@@ -191,8 +193,32 @@
                     android:text="Set CMS IP"
                     style="@style/tv_settings_value" />
 
+
+
             </LinearLayout>
             <!--/ CMS IP -->
+
+            <!-- Item Separator -->
+            <ImageView style="@style/iv_item_separator" />
+            <!--/ Item Separator -->
+
+            <!-- Mac Address -->
+            <LinearLayout
+                android:id="@+id/ll_mac_address"
+                style="@style/ll_settings_item">
+
+                <TextView
+                    android:id="@+id/tv_mac_address_label"
+                    android:text="Mac Address"
+                    style="@style/tv_settings_heading" />
+
+                <TextView
+                    android:id="@+id/tv_mac_address"
+                    android:text="Mac Address"
+                    style="@style/tv_settings_value" />
+
+            </LinearLayout>
+            <!--/ Mac Address -->
 
             <!-- Item Separator -->
             <ImageView style="@style/iv_item_separator" />
