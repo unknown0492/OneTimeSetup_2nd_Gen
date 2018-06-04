@@ -689,9 +689,15 @@ public class MainActivity extends AppCompatActivity {
 
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        finishOTS();
+                    finishOTS();
                     }
 
+                });
+                abb.setNegativeButton("Reboot", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        UtilShell.executeShellCommandWithOp( "reboot" );
+                    }
                 });
                 abb.show();
 
