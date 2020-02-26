@@ -2,8 +2,8 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/../ExcelClassLibrary/app/ExcelClassLibrary.iml" filepath="$PROJECT_DIR$/../ExcelClassLibrary/app/ExcelClassLibrary.iml" />
-      <module fileurl="file://$PROJECT_DIR$/OneTimeSetup_2ndGen.iml" filepath="$PROJECT_DIR$/OneTimeSetup_2ndGen.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../../ExcelClassLibrary/app/ExcelClassLibrary.iml" filepath="$PROJECT_DIR$/../../ExcelClassLibrary/app/ExcelClassLibrary.iml" />
+      <module fileurl="file://$PROJECT_DIR$/OneTimeSetup_2nd_Gen.iml" filepath="$PROJECT_DIR$/OneTimeSetup_2nd_Gen.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
     </modules>
   </component>

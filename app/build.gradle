@@ -1,28 +1,49 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 23
+    compileSdkVersion 29
+    signingConfigs {
+
+        def propsFile = file('keystore.properties')
+        def props = new Properties()
+        props.load(new FileInputStream(propsFile))
+
+        debug {
+            storeFile file(props['storeFile'])
+            storePassword props['storePassword']
+            keyAlias props['keyAlias']
+            keyPassword props['keyPassword']
+        }
+        release {
+            storeFile file(props['storeFile'])
+            storePassword props['storePassword']
+            keyAlias props['keyAlias']
+            keyPassword props['keyPassword']
+        }
+    }
     defaultConfig {
         applicationId 'com.excel.onetimesetup.secondgen'
-        minSdkVersion 16
-        targetSdkVersion 23
-        versionCode 1
-        versionName "1.0.0"
+        minSdkVersion 21
+        targetSdkVersion 29
+        versionCode 4
+        versionName "4.0.0"
         project.ext.set("archivesBaseName", "0-OneTimeSetup_2ndGen_v" + defaultConfig.versionName);
     }
     buildTypes {
-        release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        debug {
+            signingConfig signingConfigs.debug
+            debuggable true
         }
-    }
-    productFlavors {
+        release {
+            signingConfig signingConfigs.release
+            debuggable true
+        }
     }
 }
 
 dependencies {
-    compile fileTree(include: ['*.jar'], dir: 'libs')
-    testCompile 'junit:junit:4.12'
-    compile 'com.android.support:appcompat-v7:23.4.0'
-    compile project(':ExcelClassLibrary')
+    implementation 'androidx.appcompat:appcompat:1.0.2'
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation project(':ExcelClassLibrary')
+    implementation 'com.squareup.picasso:picasso:2.71828'
 }

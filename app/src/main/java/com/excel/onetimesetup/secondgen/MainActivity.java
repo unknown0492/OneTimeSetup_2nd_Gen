@@ -8,11 +8,6 @@ import android.content.pm.PackageManager;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
-import android.support.v7.app.ActionBar;
-import android.support.v7.app.AlertDialog;
-import android.support.v7.app.AppCompatActivity;
 import android.text.InputType;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -23,8 +18,15 @@ import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+
 import com.excel.configuration.ConfigurationReader;
 import com.excel.configuration.ConfigurationWriter;
+import com.excel.configuration.Constants;
 import com.excel.customitems.CustomItems;
 import com.excel.excelclasslibrary.UtilArray;
 import com.excel.excelclasslibrary.UtilFile;
@@ -177,6 +179,7 @@ public class MainActivity extends AppCompatActivity {
 
         // Set Network Selection Value
         setNetworkValue();
+        setMacAddress();
     }
 
 
@@ -236,16 +239,17 @@ public class MainActivity extends AppCompatActivity {
 
 
     public void selectNetworkListener(){
-
-        ll_select_network.setOnClickListener( new View.OnClickListener() {
-
-            @Override
-            public void onClick( View v ) {
-
-                UtilMisc.startApplicationUsingPackageName( context, "com.mbx.settingsmbox" );
-
+        ll_select_network.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                String str = "error";
+                if (Build.VERSION.SDK_INT <= 19) {
+                    if (!UtilMisc.startApplicationUsingPackageName(MainActivity.this.context, "com.mbx.settingsmbox")) {
+                        CustomItems.showCustomToast(MainActivity.this.context, str, "GIEC Settings not found", 5000);
+                    }
+                } else if (!UtilMisc.startApplicationUsingPackageName(MainActivity.this.context, "com.sdmc.settings")) {
+                    CustomItems.showCustomToast(MainActivity.this.context, str, "SDMC Settings not found", 5000);
+                }
             }
-
         });
     }
 
@@ -277,54 +281,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
 
-                /*
-                d.setTitle( "Set Room Number" );
-                LinearLayout lll = new LinearLayout( context );
-                LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-                lp.setMargins( 30, 30, 30, 30 );
-                lll.setLayoutParams( lp );
-                lll.setOrientation( LinearLayout.VERTICAL );
-                TextView tv_msg = new TextView( context );
-                tv_msg.setText( "Note : Type only numbers without the word `ROOM`" );
-                Button pos = new Button( context );
-                pos.setLayoutParams( new ActionBar.LayoutParams(ActionBar.LayoutParams.WRAP_CONTENT,
-                        ActionBar.LayoutParams.WRAP_CONTENT) );
-                //pos.setG
-                pos.setBackgroundResource( R.drawable.button_verify_settings1 );
-                pos.setText( "Set" );
-                pos.setOnClickListener(new View.OnClickListener() {
-
-                    @Override
-                    public void onClick( View v ) {
-                        d.dismiss();
-                    }
-
-                });
-                lll.addView( tv_msg );
-                lll.addView( pos );
-
-
-                Button neg = new Button( context );
-                neg.setWidth( 100 );
-                neg.setBackgroundResource( R.drawable.button_verify_settings1 );
-                neg.setText( "Cancel" );
-                neg.setOnClickListener(new View.OnClickListener() {
-
-                    @Override
-                    public void onClick( View v ) {
-                        d.dismiss();
-                    }
-
-                });
-                lll.addView( neg );
-
-                d.setContentView( lll );
-
-                d.show();
-                */
-
-               AlertDialog.Builder ab = new AlertDialog.Builder( context );
+                AlertDialog.Builder ab = new AlertDialog.Builder( context );
                 ab.setTitle( "Set Room Number" );
                 ab.setMessage( "Note : Type only numbers without the word `ROOM`" );
 
@@ -419,7 +376,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void setMacAddress(){
-        tv_mac_address.setText( UtilNetwork.getMacAddress( context ) );
+        try {
+            tv_mac_address.setText(UtilNetwork.getMacAddress(context));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public void verifySettings(){
@@ -601,7 +562,7 @@ public class MainActivity extends AppCompatActivity {
 
     public String[] getPreinstallAppsPackageNames(){
         UtilShell.executeShellCommandWithOp( "chmod -R 777 /system/appstv_data/preinstall_apps" );
-        String package_names =  UtilFile.readData( new File( "/system/appstv_data/preinstall_apps" ) );
+        String package_names =  UtilFile.readData( new File( Constants.PATH_PREINSTALL_APPS_FILE_SYSTEM ) );
         String p[] = package_names.trim().split( "," );
         String packages[] = new String[ p.length / 5 ];
         int i = 0;
@@ -639,6 +600,7 @@ public class MainActivity extends AppCompatActivity {
             int i = 0;
             TextView message;
             LayoutInflater lf;
+
             @Override
             protected void onPreExecute() {
                 super.onPreExecute();
