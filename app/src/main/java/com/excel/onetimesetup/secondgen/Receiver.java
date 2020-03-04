@@ -21,11 +21,12 @@ public class Receiver extends BroadcastReceiver {
         Log.d( TAG, "action : " + action );
 
         if( action.equals( "android.net.conn.CONNECTIVITY_CHANGE" ) || action.equals( "connectivity_changed" ) ){
-
-        }
-        else if( action.equals( "android.intent.action.BOOT_COMPLETED" ) || action.equals( "boot_completed" ) ){
             if( ! isOtsCompleted() )
                 startOTS( context );
+        }
+        else if( action.equals( "android.intent.action.BOOT_COMPLETED" ) || action.equals( "boot_completed" ) ){
+            /*if( ! isOtsCompleted() )
+                startOTS( context );*/
         }
 
     }
