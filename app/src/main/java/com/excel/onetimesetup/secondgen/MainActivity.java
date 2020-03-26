@@ -4,6 +4,7 @@ import android.Manifest;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.os.AsyncTask;
 import android.os.Build;
@@ -17,6 +18,7 @@ import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AlertDialog;
@@ -41,8 +43,10 @@ import org.json.JSONObject;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Vector;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -68,6 +72,8 @@ public class MainActivity extends AppCompatActivity {
             Manifest.permission.READ_EXTERNAL_STORAGE
     };
 
+    Receiver receiver;
+
     @Override
     protected void onCreate( Bundle savedInstanceState ) {
         super.onCreate( savedInstanceState );
@@ -80,10 +86,33 @@ public class MainActivity extends AppCompatActivity {
                 init();
             }
         }
-        else
+        else {
             init();
+        }
 
+        registerAllBroadcasts();
 
+    }
+
+    Vector<IntentFilter> intentFilterVector;
+
+    private void registerAllBroadcasts(){
+        receiver = new Receiver();
+        intentFilterVector = new Vector<IntentFilter>();
+        intentFilterVector.add( new IntentFilter( "connectivity_change" ) );
+
+        Iterator<IntentFilter> iterator = intentFilterVector.iterator();
+        while( iterator.hasNext() ){
+            registerReceiver( receiver, iterator.next() );
+        }
+
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        unregisterReceiver( receiver );
     }
 
     @Override
@@ -161,6 +190,7 @@ public class MainActivity extends AppCompatActivity {
         // Verify Settings Button
         verifySettings();
 
+
     }
 
     @Override
@@ -180,6 +210,9 @@ public class MainActivity extends AppCompatActivity {
         // Set Network Selection Value
         setNetworkValue();
         setMacAddress();
+
+        // Check if AutoOTS is enabled from the configuration file
+        runAutoOTS();
     }
 
 
@@ -232,8 +265,6 @@ public class MainActivity extends AppCompatActivity {
             Log.d( TAG, "Exiting OTS, already completed !" );
             finish();
         }
-
-
     }
 
 
@@ -638,10 +669,20 @@ public class MainActivity extends AppCompatActivity {
             }
 
             @Override
-            protected void onPostExecute(Void aVoid) {
-                super.onPostExecute(aVoid);
+            protected void onPostExecute( Void aVoid ) {
+                super.onPostExecute( aVoid );
 
                 ab.dismiss();
+                /*configurationReader = ConfigurationReader.reInstantiate();
+                try {
+                    if ( configurationReader.getAutoOtsEnabled().equals("1") ) {
+                        finishOTS();
+                        return;
+                    }
+                }
+                catch ( Exception e ){
+                    e.printStackTrace();
+                }*/
 
                 AlertDialog.Builder abb = new AlertDialog.Builder( context );
                 abb.setTitle( "Success" );
@@ -650,25 +691,130 @@ public class MainActivity extends AppCompatActivity {
                 abb.setPositiveButton("Exit", new DialogInterface.OnClickListener() {
 
                     @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                    finishOTS();
+                    public void onClick( DialogInterface dialog, int which ) {
+                        finishOTS();
                     }
 
                 });
                 abb.setNegativeButton("Reboot", new DialogInterface.OnClickListener() {
                     @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
+                    public void onClick( DialogInterface dialogInterface, int i ) {
                         UtilShell.executeShellCommandWithOp( "reboot" );
                     }
                 });
                 abb.show();
-
 
             }
 
 
         }.execute();
 
+    }
+
+    public void runAutoOTS(){
+
+        try {
+            if (configurationReader.getAutoOtsEnabled().equals("0")) {
+                Log.e(TAG, "Auto OTS has been disabled !");
+                return;
+            }
+        }
+        catch ( Exception e ){
+            Log.e(TAG, "Auto OTS code does not exist in the configuration file !");
+            e.printStackTrace();
+            return;
+        }
+
+
+        final String cms_ip = configurationReader.getCmsIp();
+        final String room_no = "ROOM9999";
+        final String ip_address = UtilNetwork.getLocalIpAddressIPv4( context );
+        final String mac_address = UtilNetwork.getMacAddress( context );
+
+        if( mac_address.trim().equals( "" ) ||
+                mac_address.equals( "error" ) ){
+            Toast.makeText( context, "Mac Address not detected. Press HOME, unplug and replug the Network Cable. 1-7-1-7-1 and click on Run OTS !", Toast.LENGTH_LONG ).show();
+            return;
+        }
+
+        new AsyncTask< Void, Void, String >(){
+
+            @Override
+            protected String doInBackground( Void... params ) {
+                String URL = UtilURL.getWebserviceURL( cms_ip );
+                String url_params = UtilURL.getURLParamsFromPairs(
+                        new String[][]{
+                                { "what_do_you_want", "register_appstv" },
+                                { "mac_address", mac_address },
+                                { "room_no", room_no },
+                                { "ip_address", ip_address },
+                                { "client", "appstv" },
+                                { "api_key", UtilMisc.md5String( mac_address ) },
+                        } );
+                Log.d( TAG, URL + "-----" +url_params );
+                return UtilNetwork.makeRequestForData( URL, "POST", url_params );
+            }
+
+            @Override
+            protected void onPostExecute( String s ) {
+                super.onPostExecute( s );
+
+                if( s == null ){
+                    //CustomItems.showCustomToast( context, "error", "Incorrect CMS Server IP or Network Disconnected. Failed to register !", 5000 );
+                    CustomItems.showCustomToast( context, "error", "Incorrect CMS Server IP or Network Disconnected !", 5000 );
+
+                    Log.e( TAG, "Null ! Incorrect CMS Server IP or Network Disconnected !" );
+                    return;
+                }
+
+                Log.d( TAG, s );
+
+                String info = null;
+                try{
+                    JSONArray jsonArray = new JSONArray( s );
+                    JSONObject jsonObject = jsonArray.getJSONObject( 0 );
+                    String type = jsonObject.getString( "type" );
+                    info = jsonObject.getString( "info" );
+
+                    if( type.equals( "error" ) ){
+                        CustomItems.showCustomToast( context, "error", info, 5000 );
+                        return;
+                    }
+                }
+                catch ( Exception e ){
+                    e.printStackTrace();
+                    CustomItems.showCustomToast( context, "error", "JSONException Occurred !", 5000 );
+                    return;
+                }
+
+
+                // configurationWriter = ConfigurationWriter.getInstance( context );
+                File appstv_data = new File( ConfigurationWriter.getAppstvDataDirectorypath() );
+                if( ! appstv_data.exists() )
+                    appstv_data.mkdirs();
+
+                if( ! ConfigurationWriter.writeAllConfigurations( context, info ) ){
+                    CustomItems.showCustomToast( context, "error", "OTS was not successful. Contact Technical Team !", 5000 );
+                    return;
+                }
+
+                // Apply the configuration settings on the box, as received from the CMS Server
+                configurationReader = ConfigurationReader.reInstantiate();
+
+                // Set TimeZone
+                setTimeZone( configurationReader.getTimezone() );
+
+                // Set Language
+                // setLocaleLanguage( configurationReader.getLanguage() );
+
+                // Install pre-install apps
+                installPreInstallApps();
+
+                CustomItems.showCustomToast( context, "success", "Configuration settings saved successfully !", 5000 );
+                // finish();
+
+            }
+        }.execute();
 
     }
 

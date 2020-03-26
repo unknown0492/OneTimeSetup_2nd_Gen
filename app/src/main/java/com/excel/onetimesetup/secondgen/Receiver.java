@@ -20,7 +20,8 @@ public class Receiver extends BroadcastReceiver {
         String action = intent.getAction();
         Log.d( TAG, "action : " + action );
 
-        if( action.equals( "android.net.conn.CONNECTIVITY_CHANGE" ) || action.equals( "connectivity_changed" ) ){
+        //if( action.equals( "connectivity_change" ) || action.equals( "android.net.conn.CONNECTIVITY_CHANGE" ) ){
+        if( action.equals( "connectivity_change" ) || action.equals( "android.net.conn.CONNECTIVITY_CHANGE" ) ){
             if( ! isOtsCompleted() )
                 startOTS( context );
         }
